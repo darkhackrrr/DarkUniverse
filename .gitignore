@@ -38,3 +38,6 @@ prisma/*.db
 # editor
 .idea/
 .vscode/
+
+.vercel
+.env*
