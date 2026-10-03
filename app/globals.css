@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   DarkUniverse Hub design tokens
+   Dark, minimal, gaming/creator focused. Subtle purple/blue accent.
+--------------------------------------------------------------------------- */
+
+@theme {
+  --color-background: #0a0a0c;
+  --color-surface: #101014;
+  --color-card: #121216;
+  --color-card-foreground: #f4f4f5;
+  --color-popover: #15151a;
+  --color-popover-foreground: #f4f4f5;
+
+  --color-primary: #7c6cf5;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #1a1a21;
+  --color-secondary-foreground: #f4f4f5;
+  --color-muted: #15151a;
+  --color-muted-foreground: #9ca3af;
+  --color-accent: #1b1b23;
+  --color-accent-foreground: #f4f4f5;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-info: #60a5fa;
+
+  --color-border: #26262e;
+  --color-input: #26262e;
+  --color-ring: #7c6cf5;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --radius-sm: 0.3rem;
+  --radius-md: 0.45rem;
+  --radius-lg: 0.6rem;
+  --radius-xl: 0.85rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-card-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-primary) 35%, transparent);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #26262e;
+    border-radius: 999px;
+    border: 2px solid var(--color-background);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #34343d;
+  }
+}
+
+@layer utilities {
+  /* Restrained glass effect used sparingly (navbar, hero panel) */
+  .glass {
+    background: color-mix(in oklab, #101014 78%, transparent);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-gradient {
+    background: linear-gradient(180deg, #ffffff 0%, #b9b6d6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .grid-bg {
+    background-image: linear-gradient(
+        to right,
+        color-mix(in oklab, #ffffff 4%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklab, #ffffff 4%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  }
+
+  .glow-ring {
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--color-primary) 25%, transparent),
+      0 18px 50px -24px color-mix(in oklab, var(--color-primary) 55%, transparent);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Animations — smooth and subtle only
+--------------------------------------------------------------------------- */
+
+@keyframes du-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes du-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes du-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.animate-fade-up {
+  animation: du-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: du-fade-in 0.35s ease both;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #15151a 25%,
+    #1f1f27 50%,
+    #15151a 75%
+  );
+  background-size: 200% 100%;
+  animation: du-shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-in,
+  .skeleton-shimmer {
+    animation: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}

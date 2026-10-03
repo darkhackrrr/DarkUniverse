@@ -1,0 +1,269 @@
+// ---------------------------------------------------------------------------
+// DarkUniverse Hub - Prisma schema
+// PostgreSQL-ready. Run `npx prisma migrate dev --name init` after setting
+// DATABASE_URL, or `npx prisma db push` for a quick sync.
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Auth / users ────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  discordId     String?   @unique
+  username      String    @unique
+  name          String?
+  email         String?   @unique
+  image         String?
+  bio           String?
+  role          Role      @default(USER)
+  isBotVerified Boolean   @default(false)
+  points        Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  savedTools  SavedTool[]
+  activities  Activity[]
+  badges      UserBadge[]
+  rewards     UserReward[]
+  admin       Admin?
+
+  @@index([role])
+}
+
+// OAuth account linkage (Discord today, YouTube/Roblox later).
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// ── Content ─────────────────────────────────────────────────────────────────
+
+model Game {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  genre       String
+  status      String   @default("Live")
+  players     Int      @default(0)
+  robloxUrl   String
+  thumbUrl    String?
+  universeId  String?
+  featured    Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  codes GameCode[]
+
+  @@index([featured])
+}
+
+model GameCode {
+  id        String    @id @default(cuid())
+  code      String
+  reward    String
+  status    String    @default("active")
+  expiresAt DateTime?
+  gameId    String?
+  game      Game?     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([gameId])
+  @@index([status])
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  category    String
+  url         String
+  downloadUrl String?
+  tags        String[] @default([])
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  category    String
+  imageUrl    String?
+  link        String?
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([publishedAt])
+}
+
+// ── Gamification ────────────────────────────────────────────────────────────
+
+model Reward {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  type        String
+  points      Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users UserReward[]
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  icon        String?
+  rarity      String   @default("common")
+  createdAt   DateTime @default(now())
+
+  users UserBadge[]
+}
+
+model UserBadge {
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, badgeId])
+  @@index([badgeId])
+}
+
+model UserReward {
+  userId    String
+  rewardId  String
+  claimedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reward Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+
+  @@id([userId, rewardId])
+  @@index([rewardId])
+}
+
+// ── User generated ──────────────────────────────────────────────────────────
+
+model SavedTool {
+  id        String   @id @default(cuid())
+  userId    String
+  toolSlug  String
+  note      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, toolSlug])
+  @@index([userId])
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String?
+  type      String
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ── Community submissions ───────────────────────────────────────────────────
+// Posted by signed-in users, reviewed by an admin. Approving a game creates a
+// Game row; approving a code creates a GameCode row. The submission is kept as
+// the audit trail of who sent what.
+
+model GameSubmission {
+  id           String    @id @default(cuid())
+  name         String
+  description  String
+  genre        String
+  robloxUrl    String
+  universeId   String?
+  note         String?
+  status       String    @default("pending") // pending | approved | rejected
+  reviewerNote String?
+  submitterId  String?
+  submitterName String   @default("")
+  gameId       String? // populated when approved
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model CodeSubmission {
+  id           String    @id @default(cuid())
+  code         String
+  reward       String
+  gameName     String?
+  gameId       String? // linked game, if any
+  expiresAt    DateTime?
+  note         String?
+  status       String    @default("pending") // pending | approved | rejected
+  reviewerNote String?
+  submitterId  String?
+  submitterName String   @default("")
+  codeId       String? // populated when approved
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ── Admin ───────────────────────────────────────────────────────────────────
+
+model Admin {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  permissions String[] @default([])
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
