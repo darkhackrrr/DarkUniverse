@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { guardUser } from "@/lib/auth/guards";
 import { getDashboardData } from "@/lib/dashboard";
+import { VerifyCard } from "@/components/dashboard/verify-card";
+import { readVerifyStatus } from "@/lib/verify";
 import { formatNumber, formatRelativeTime } from "@/lib/utils";
 import { activeRewardCount } from "@/lib/data/rewards";
 
@@ -24,7 +26,10 @@ export const metadata: Metadata = {
 
 export default async function DashboardOverviewPage() {
   const user = await guardUser("/dashboard");
-  const data = await getDashboardData(user);
+  const [data, verify] = await Promise.all([
+    getDashboardData(user),
+    readVerifyStatus(user.id),
+  ]);
 
   const stats = [
     {
@@ -170,6 +175,8 @@ export default async function DashboardOverviewPage() {
         </div>
 
         <aside className="space-y-6">
+          <VerifyCard initial={verify} />
+
           <Card className="border-primary/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

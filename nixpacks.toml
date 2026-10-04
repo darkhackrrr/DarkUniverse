@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs-22"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npx prisma generate"]
+
+[phases.start]
+cmd = "npm run bot"

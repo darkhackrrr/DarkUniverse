@@ -30,6 +30,8 @@ model User {
   bio           String?
   role          Role      @default(USER)
   isBotVerified Boolean   @default(false)
+  verifyCode    String?   @unique
+  verifyExpiresAt DateTime?
   points        Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -266,4 +268,11 @@ model Admin {
   createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Bot-side key/value state (feed + alert dedupe markers).
+model BotState {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
