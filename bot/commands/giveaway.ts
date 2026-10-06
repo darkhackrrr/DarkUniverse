@@ -108,10 +108,10 @@ const startCommand: BotCommand = {
         .setName("start")
         .setDescription("Start a giveaway")
         .addStringOption((o) => o.setName("duration").setDescription("e.g. 10m, 1h, 1d").setRequired(true))
+        .addStringOption((o) => o.setName("prize").setDescription("What are they winning?").setRequired(true))
         .addIntegerOption((o) =>
           o.setName("winners").setDescription("Number of winners (default 1)").setMinValue(1).setMaxValue(20),
         )
-        .addStringOption((o) => o.setName("prize").setDescription("What are they winning?").setRequired(true))
         .addChannelOption((o) => o.setName("channel").setDescription("Where to host it")),
     )
     .addSubcommand((sub) =>
