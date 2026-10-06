@@ -6,7 +6,11 @@ const ACCENT = 0x8b7cf8;
 
 const AI_KEY = process.env.AI_API_KEY ?? process.env.OPENAI_API_KEY;
 const AI_BASE = (process.env.AI_BASE_URL ?? "https://api.openai.com/v1").replace(/\/$/, "");
+const AI_CHAT_PATH = process.env.AI_CHAT_PATH ?? "/chat/completions";
 const AI_MODEL = process.env.AI_MODEL ?? "gpt-4o-mini";
+// Optional OpenAI-compatible image override, e.g.
+// https://image.pollinations.ai/prompt/{prompt} (GET returns the image directly).
+const AI_IMAGE_TEMPLATE = process.env.AI_IMAGE_URL_TEMPLATE;
 
 const NOT_CONFIGURED =
   "AI isn't configured on this bot yet — an admin needs to set `OPENAI_API_KEY` (or `AI_API_KEY`).";
@@ -16,7 +20,7 @@ interface ChatResponse {
 }
 
 async function askModel(system: string, prompt: string): Promise<string> {
-  const res = await fetch(`${AI_BASE}/chat/completions`, {
+  const res = await fetch(`${AI_BASE}${AI_CHAT_PATH}`, {
     method: "POST",
     signal: AbortSignal.timeout(30_000),
     headers: {
@@ -114,6 +118,18 @@ const imagineCommand: BotCommand = {
       return;
     }
     try {
+      if (AI_IMAGE_TEMPLATE) {
+        const url = AI_IMAGE_TEMPLATE.replace("{prompt}", encodeURIComponent(prompt));
+        const probe = await fetch(url, { method: "GET", signal: AbortSignal.timeout(60_000) });
+        if (!probe.ok) throw new Error(`HTTP ${probe.status}`);
+        const mime = probe.headers.get("content-type") ?? "";
+        if (!mime.startsWith("image/")) throw new Error(`not an image: ${mime}`);
+        await probe.body?.cancel().catch(() => null);
+        await interaction.editReply({
+          embeds: [embed(`🎨 ${prompt.slice(0, 80)}`, "").setImage(url)],
+        });
+        return;
+      }
       const res = await fetch(`${AI_BASE}/images/generations`, {
         method: "POST",
         signal: AbortSignal.timeout(60_000),
