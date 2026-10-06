@@ -4,6 +4,7 @@ import { env } from "../env";
 import type { BotCommand } from "./types";
 
 export const verifyCommand: BotCommand = {
+  category: "Server",
   data: new SlashCommandBuilder()
     .setName("verify")
     .setDescription("Link your DarkUniverse Hub account and get the Verified role")

@@ -1,28 +1,44 @@
-import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
-import { getPrisma } from "@/lib/database/client";
+import {
+  Client,
+  Events,
+  GatewayIntentBits,
+  MessageFlags,
+  Partials,
+} from "discord.js";
 import { startAlerts } from "./alerts";
 import { commandMap } from "./commands";
 import { env } from "./env";
 import { startFeed } from "./feed";
 import { startHealthServer } from "./health";
+import { registerListeners } from "./listeners";
 import { fail, info } from "./log";
 import { registerGuildCommands } from "./register";
+import { startSchedulers } from "./schedulers";
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.MessageContent,
+  ],
+  partials: [Partials.Channel, Partials.Message, Partials.Reaction],
 });
 
 client.once(Events.ClientReady, async (ready) => {
   info("bot", `logged in as ${ready.user.tag}`);
   try {
     const names = await registerGuildCommands();
-    info("bot", `registered commands: ${names.join(", ")}`);
+    info("bot", `registered ${names.length} commands: ${names.join(", ")}`);
   } catch (error) {
     fail("bot", "command registration failed", error);
   }
   startHealthServer();
   startFeed(client);
   startAlerts(client);
+  registerListeners(client);
+  startSchedulers(client);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -52,13 +68,6 @@ client.on(Events.GuildMemberAdd, async (member) => {
       await member.roles.add(env.adminRoleId);
       info("members", `granted Admin to ${member.user.tag}`);
     }
-    const prisma = getPrisma();
-    if (!prisma) return;
-    const user = await prisma.user.findUnique({ where: { discordId: member.id } });
-    if (user?.isBotVerified) {
-      await member.roles.add(env.verifyRoleId);
-      info("members", `restored Verified role for ${member.user.tag}`);
-    }
   } catch (error) {
     fail("members", "role grant failed", error);
   }
@@ -66,7 +75,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
 
 client.login(env.token).catch((error) => {
   console.error(
-    "[bot] login failed — verify DISCORD_BOT_TOKEN and that the Server Members Intent is enabled in the Discord portal.",
+    "[bot] login failed — verify DISCORD_BOT_TOKEN, the Server Members Intent, and the Message Content Intent are enabled in the Discord portal.",
     error,
   );
   process.exit(1);

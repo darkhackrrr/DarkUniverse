@@ -10,6 +10,7 @@ import { gamesEmbed } from "../embeds";
 import type { BotCommand } from "./types";
 
 export const gamesCommand: BotCommand = {
+  category: "Site",
   data: new SlashCommandBuilder()
     .setName("games")
     .setDescription("Browse the DarkUniverse game catalogue")

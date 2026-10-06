@@ -17,6 +17,7 @@ function slugify(input: string): string {
 }
 
 export const announceCommand: BotCommand = {
+  category: "Server",
   data: new SlashCommandBuilder()
     .setName("announce")
     .setDescription("Publish an announcement to the site and #announcements (admin)")

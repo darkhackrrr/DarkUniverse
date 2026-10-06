@@ -276,3 +276,206 @@ model BotState {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+// ── Bot: moderation ─────────────────────────────────────────────────────────
+
+model Warning {
+  id          String   @id @default(cuid())
+  guildId     String
+  userId      String // offender discord id
+  moderatorId String
+  reason      String   @default("No reason provided")
+  createdAt   DateTime @default(now())
+
+  @@index([guildId, userId])
+}
+
+model ModCase {
+  id          String   @id @default(cuid())
+  guildId     String
+  caseNumber  Int
+  type        String // ban | unban | kick | timeout | untimeout | warn | clear | ...
+  userId      String // target discord id
+  moderatorId String
+  reason      String   @default("No reason provided")
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@unique([guildId, caseNumber])
+  @@index([guildId, userId])
+}
+
+// ── Bot: economy (guild scoped) ─────────────────────────────────────────────
+
+model Economy {
+  guildId   String
+  userId    String
+  balance   Int      @default(0)
+  bank      Int      @default(0)
+  inventory String[] @default([])
+  dailyAt   DateTime?
+  workAt    DateTime?
+  gambleAt  DateTime?
+  robAt     DateTime?
+  streak    Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@id([guildId, userId])
+  @@index([guildId, balance])
+}
+
+// XP / reputation / profile, guild scoped.
+model MemberProfile {
+  guildId  String
+  userId   String
+  xp       Int      @default(0)
+  level    Int      @default(0)
+  messages Int      @default(0)
+  rep      Int      @default(0)
+  repAt    DateTime?
+  bio      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([guildId, userId])
+  @@index([guildId, xp])
+}
+
+// ── Bot: guild configuration ────────────────────────────────────────────────
+
+model GuildConfig {
+  guildId            String   @id
+  welcomeChannelId   String?
+  welcomeMessage     String?
+  goodbyeChannelId   String?
+  goodbyeMessage     String?
+  logsChannelId      String?
+  rulesChannelId     String?
+  suggestionsChannelId String?
+  autoroleId         String?
+  ticketCategoryId   String?
+  ticketStaffRoleId  String?
+  automodEnabled     Boolean  @default(false)
+  automodBadWords    String[] @default([])
+  automodNoInvites   Boolean  @default(false)
+  automodNoMentions  Boolean  @default(false)
+  xpEnabled          Boolean  @default(true)
+  reactionRoles      Json? // [{ channelId, messageId, emoji, roleId }]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// ── Bot: giveaways ──────────────────────────────────────────────────────────
+
+model Giveaway {
+  id          String   @id @default(cuid())
+  guildId     String
+  channelId   String
+  messageId   String?
+  hostId      String
+  prize       String
+  winnerCount Int      @default(1)
+  endsAt      DateTime
+  ended       Boolean  @default(false)
+  winners     String[] @default([])
+  entrants    String[] @default([])
+  createdAt   DateTime @default(now())
+
+  @@index([endsAt, ended])
+  @@index([guildId])
+}
+
+// ── Bot: tickets ────────────────────────────────────────────────────────────
+
+model Ticket {
+  id        String    @id @default(cuid())
+  guildId   String
+  number    Int
+  channelId String    @unique
+  openerId  String
+  subject   String?
+  status    String    @default("open") // open | closed
+  createdAt DateTime  @default(now())
+  closedAt  DateTime?
+
+  @@index([guildId, status])
+}
+
+// ── Bot: community features ─────────────────────────────────────────────────
+
+model Suggestion {
+  id        String   @id @default(cuid())
+  guildId   String
+  userId    String
+  content   String
+  status    String   @default("open") // open | accepted | denied
+  messageId String?
+  createdAt DateTime @default(now())
+
+  @@index([guildId, status])
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  guildId   String
+  userId    String // reporter
+  targetId  String
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@index([guildId, targetId])
+}
+
+model Poll {
+  id        String   @id @default(cuid())
+  guildId   String
+  channelId String
+  messageId String
+  question  String
+  options   String[]
+  votes     Json? // { [userId]: optionIndex }
+  endsAt    DateTime
+  ended     Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([endsAt, ended])
+}
+
+model Reminder {
+  id        String   @id @default(cuid())
+  userId    String
+  guildId   String?
+  channelId String
+  remindAt  DateTime
+  message   String
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([remindAt, done])
+}
+
+model Afk {
+  guildId   String
+  userId    String
+  reason    String   @default("AFK")
+  createdAt DateTime @default(now())
+
+  @@id([guildId, userId])
+}
+
+// External feed subscriptions (youtube RSS, roblox badges, twitch, twitter).
+model Subscription {
+  id        String   @id @default(cuid())
+  guildId   String
+  channelId String // where to post
+  type      String // youtube | twitch | twitter | roblox
+  target    String // handle / url / id as entered
+  targetId  String? // resolved id
+  lastSeen  String? // last post id
+  roleId    String? // optional role to ping
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([guildId, type, target])
+  @@index([type, enabled])
+}

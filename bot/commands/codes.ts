@@ -4,6 +4,7 @@ import { codesEmbed } from "../embeds";
 import type { BotCommand } from "./types";
 
 export const codesCommand: BotCommand = {
+  category: "Site",
   data: new SlashCommandBuilder()
     .setName("codes")
     .setDescription("Show active Roblox game codes")

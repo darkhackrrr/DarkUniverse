@@ -4,6 +4,7 @@ import { infoEmbed } from "../embeds";
 import type { BotCommand } from "./types";
 
 export const infoCommand: BotCommand = {
+  category: "Site",
   data: new SlashCommandBuilder()
     .setName("info")
     .setDescription("About DarkUniverse Hub and where to find things"),
