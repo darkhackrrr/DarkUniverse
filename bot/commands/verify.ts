@@ -14,8 +14,11 @@ export const verifyCommand: BotCommand = {
         .setRequired(true),
     ),
   async execute(interaction) {
+    // Defer immediately: the Discord interaction token expires after 3s and the
+    // database roundtrip can exceed that on a cold connection.
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const reply = async (content: string) => {
-      await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+      await interaction.editReply(content);
     };
 
     const prisma = getPrisma();
