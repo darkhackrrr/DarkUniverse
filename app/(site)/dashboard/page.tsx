@@ -28,7 +28,7 @@ export default async function DashboardOverviewPage() {
   const user = await guardUser("/dashboard");
   const [data, verify] = await Promise.all([
     getDashboardData(user),
-    readVerifyStatus(user.id),
+    readVerifyStatus(user),
   ]);
 
   const stats = [

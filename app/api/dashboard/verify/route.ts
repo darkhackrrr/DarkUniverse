@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   if (!user) return jsonError("Sign in to use Discord verification.", 401);
 
   if (!getPrisma()) return jsonOk({ database: false, verified: false, code: null });
-  return jsonOk(await readVerifyStatus(user.id));
+  return jsonOk(await readVerifyStatus(user));
 }
 
 export async function POST(request: Request) {
@@ -42,10 +42,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const issued = await issueVerifyCode(user.id);
+    const issued = await issueVerifyCode(user);
     if (!issued) return serverError("Could not create a verification code.");
     return jsonOk(issued);
-  } catch {
+  } catch (error) {
+    console.error("[verify] issue failed:", error);
     return serverError("Could not create a verification code.");
   }
 }
@@ -58,9 +59,10 @@ export async function DELETE(request: Request) {
   if (!user) return jsonError("Sign in to use Discord verification.", 401);
 
   try {
-    await clearVerifyCode(user.id);
+    await clearVerifyCode(user);
     return jsonOk({ cleared: true });
-  } catch {
+  } catch (error) {
+    console.error("[verify] clear failed:", error);
     return serverError("Could not clear your code.");
   }
 }
